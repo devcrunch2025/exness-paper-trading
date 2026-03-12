@@ -1,0 +1,67 @@
+{
+  "symbol": "EURUSD",
+  "symbols": [
+    "EURUSD",
+    "GBPUSD",
+    "AUDUSD",
+    "USDCHF",
+    "USDJPY"
+  ],
+  "timeframe": "M15",
+  "startingBalance": 100,
+  "capitalPerSymbol": 20,
+  "endingBalance": 100,
+  "netPnl": 0,
+  "winRate": 0,
+  "wins": 0,
+  "losses": 0,
+  "totalOrders": 0,
+  "activeTradesCount": 0,
+  "maxDrawdownPct": 0,
+  "orders": [],
+  "activeTrades": [],
+  "symbolReports": [
+    {
+      "symbol": "EURUSD",
+      "endingBalance": 20,
+      "netPnl": 0,
+      "totalOrders": 0,
+      "winRate": 0,
+      "activeTradesCount": 0
+    },
+    {
+      "symbol": "GBPUSD",
+      "endingBalance": 20,
+      "netPnl": 0,
+      "totalOrders": 0,
+      "winRate": 0,
+      "activeTradesCount": 0
+    },
+    {
+      "symbol": "AUDUSD",
+      "endingBalance": 20,
+      "netPnl": 0,
+      "totalOrders": 0,
+      "winRate": 0,
+      "activeTradesCount": 0
+    },
+    {
+      "symbol": "USDCHF",
+      "endingBalance": 20,
+      "netPnl": 0,
+      "totalOrders": 0,
+      "winRate": 0,
+      "activeTradesCount": 0
+    },
+    {
+      "symbol": "USDJPY",
+      "endingBalance": 20,
+      "netPnl": 0,
+      "totalOrders": 0,
+      "winRate": 0,
+      "activeTradesCount": 0
+    }
+  ],
+  "generatedAt": "2026-03-12T21:05:34.769Z",
+  "resetAt": "2026-03-12T21:05:10.132Z"
+}

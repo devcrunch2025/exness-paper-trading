@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper Trading Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+
+    <main class="dashboard">
+      <header class="hero">
+        <div class="hero-topline">
+          <div>
+            <h1>Paper Trading Control Room</h1>
+            <p>Multi-strategy simulation with risk-focused analytics and order-level filtering.</p>
+          </div>
+          <button id="clearOrdersBtn" class="danger-btn">Clear All Orders</button>
+        </div>
+      </header>
+
+      <section class="bot-feed panel" aria-label="Bot status ticker">
+        <div class="bot-feed-label">Live Bot Feed</div>
+        <div class="ticker-window">
+          <div class="ticker-track" id="botFeedTrack">
+            <span class="ticker-item">Waiting for live bot report...</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="filters panel">
+        <h2>Filters</h2>
+        <div class="filter-grid">
+          <label>
+            Candles
+            <input id="candles" type="number" value="500" min="200" max="3000" step="50" />
+          </label>
+          <label>
+            Starting Balance ($)
+            <input id="startingBalance" type="number" value="100" min="50" step="10" />
+          </label>
+          <label>
+            Side
+            <select id="side">
+              <option value="ALL">All</option>
+              <option value="BUY">Buy</option>
+              <option value="SELL">Sell</option>
+            </select>
+          </label>
+          <label>
+            Trade Name / Symbol
+            <select id="symbolFilter">
+              <option value="ALL">All</option>
+            </select>
+          </label>
+          <label>
+            Outcome
+            <select id="outcome">
+              <option value="ALL">All</option>
+              <option value="WIN">Win</option>
+              <option value="LOSS">Loss</option>
+            </select>
+          </label>
+          <label>
+            Min P/L ($)
+            <input id="minPnl" type="number" value="" placeholder="No minimum" step="0.1" />
+          </label>
+          <button id="runBtn" class="run-btn">Refresh Report</button>
+        </div>
+      </section>
+
+      <section class="kpi-grid" id="kpis"></section>
+
+      <section class="panel active-trades-panel">
+        <div class="orders-header">
+          <h2>Active Trades</h2>
+          <span id="activeTradeCount">0 open trades</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Strategies</th>
+                <th>Start DateTime</th>
+                <th>Entry</th>
+                <th>Current Price</th>
+                <th>Stop Loss</th>
+                <th>Take Profit</th>
+                <th>Floating P/L</th>
+              </tr>
+            </thead>
+            <tbody id="activeTradesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel orders-panel">
+        <div class="orders-header">
+          <h2>Orders</h2>
+          <span id="orderCount">0 trades</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Strategies</th>
+                <th>Start DateTime</th>
+                <th>Closed DateTime</th>
+                <th>Duration</th>
+                <th>Lot</th>
+                <th>Entry</th>
+                <th>Stop Loss</th>
+                <th>Take Profit</th>
+                <th>Trigger Type</th>
+                <th>Triggered At Price</th>
+                <th>Exit</th>
+                <th>P/L</th>
+                <th>Outcome</th>
+                <th>Balance After</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

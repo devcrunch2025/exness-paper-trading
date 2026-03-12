@@ -1,0 +1,26 @@
+{
+  "name": "exness-paper-trading",
+  "version": "1.0.0",
+  "description": "Node.js paper trading bot with multiple strategies and risk management",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dashboard": "node src/index.js",
+    "simulate": "node src/index.js --cli",
+    "simulate:long": "node src/index.js --cli --candles=800 --startingBalance=500",
+    "bot": "node src/index.js --bot",
+    "bot:fast": "node src/index.js --bot --intervalMs=10000"
+  },
+  "keywords": [
+    "paper-trading",
+    "trading-bot",
+    "nodejs",
+    "strategy"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
