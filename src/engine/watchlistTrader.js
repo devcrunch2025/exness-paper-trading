@@ -6,7 +6,8 @@ const SYMBOL_START_PRICES = {
   GBPUSD: 1.27,
   AUDUSD: 0.66,
   USDCHF: 0.89,
-  USDJPY: 148.2
+  USDJPY: 148.2,
+  BTCUSD: 70000
 };
 
 function getStartPrice(symbol) {

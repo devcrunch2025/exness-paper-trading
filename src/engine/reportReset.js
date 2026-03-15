@@ -36,16 +36,17 @@ function applyResetToReport(report, resetAt) {
 
   const resetTime = new Date(resetAt).getTime();
   if (Number.isNaN(resetTime)) return report;
+  const activeGraceMs = 2 * 60 * 1000;
 
   const symbols = report.symbols && report.symbols.length ? report.symbols : [report.symbol];
   const capitalPerSymbol = Number((report.startingBalance / symbols.length).toFixed(2));
 
   const orders = (report.orders || [])
-    .filter((order) => new Date(order.startDateTime).getTime() >= resetTime)
+    .filter((order) => new Date(order.endDateTime || order.startDateTime).getTime() >= resetTime)
     .sort((left, right) => new Date(left.endDateTime || left.startDateTime).getTime() - new Date(right.endDateTime || right.startDateTime).getTime());
 
   const activeTrades = (report.activeTrades || [])
-    .filter((trade) => new Date(trade.startDateTime).getTime() >= resetTime)
+    .filter((trade) => new Date(trade.startDateTime).getTime() >= resetTime - activeGraceMs)
     .sort((left, right) => new Date(left.startDateTime).getTime() - new Date(right.startDateTime).getTime());
 
   const symbolState = new Map(

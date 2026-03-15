@@ -1,6 +1,63 @@
 const { resolveSignal } = require("./strategyManager");
 const { fromPips, calculateLotSize, estimatePnL } = require("./risk");
 
+function timeframeToMinutes(timeframe) {
+  if (timeframe === "M1") return 1;
+  if (timeframe === "M5") return 5;
+  if (timeframe === "M15") return 15;
+  if (timeframe === "M30") return 30;
+  if (timeframe === "H1") return 60;
+  if (timeframe === "H4") return 240;
+  if (timeframe === "D1") return 1440;
+  return 15;
+}
+
+function analyzeWindowTrend(candles, windowMinutes, timeframe) {
+  const stepMinutes = timeframeToMinutes(timeframe);
+  const bars = Math.max(2, Math.floor(windowMinutes / stepMinutes));
+
+  const last = candles[candles.length - 1].close;
+  const useBars = Math.min(bars, Math.max(1, candles.length - 1));
+  const base = candles[candles.length - 1 - useBars].close;
+  const changePct = ((last - base) / base) * 100;
+
+  let direction = "FLAT";
+  if (changePct > 0.12) direction = "BUY";
+  if (changePct < -0.12) direction = "SELL";
+
+  return {
+    direction,
+    changePct: Number(changePct.toFixed(3)),
+    enoughData: candles.length > bars
+  };
+}
+
+function evaluatePreTradeContext(candles, timeframe, signal, mode) {
+  const dayTrend = analyzeWindowTrend(candles, 24 * 60, timeframe);
+  const weekTrend = analyzeWindowTrend(candles, 7 * 24 * 60, timeframe);
+
+  let allowed = true;
+  if (signal === "BUY") {
+    if (mode === "day") allowed = dayTrend.direction === "BUY";
+    if (mode === "week") allowed = weekTrend.direction === "BUY";
+    if (mode === "day_or_week") allowed = dayTrend.direction === "BUY" || weekTrend.direction === "BUY";
+  }
+
+  if (signal === "SELL") {
+    if (mode === "day") allowed = dayTrend.direction === "SELL";
+    if (mode === "week") allowed = weekTrend.direction === "SELL";
+    if (mode === "day_or_week") allowed = dayTrend.direction === "SELL" || weekTrend.direction === "SELL";
+  }
+
+  return {
+    mode,
+    signal,
+    dayTrend,
+    weekTrend,
+    allowed
+  };
+}
+
 function toDurationText(openTs, closeTs, timeframe) {
   const stepMinutes = timeframe === "H1" ? 60 : timeframe === "H4" ? 240 : timeframe === "D1" ? 1440 : timeframe === "M30" ? 30 : timeframe === "M5" ? 5 : 15;
   const minutes = (closeTs - openTs) * stepMinutes;
@@ -31,6 +88,10 @@ function runPaperSimulation({ candles, config }) {
       const decision = resolveSignal(history, config.strategyWeights);
       if (decision.signal === "HOLD") continue;
 
+      const analysisMode = config.preTradeAnalysisMode || "day_or_week";
+      const preTradeContext = evaluatePreTradeContext(history, config.timeframe, decision.signal, analysisMode);
+      if (!preTradeContext.allowed) continue;
+
       const lot = calculateLotSize({
         balance,
         riskPerTradePct: config.riskPerTradePct,
@@ -54,6 +115,7 @@ function runPaperSimulation({ candles, config }) {
             ? entry + fromPips(config.stopLossPips * config.takeProfitRMultiple)
             : entry - fromPips(config.stopLossPips * config.takeProfitRMultiple),
         decision,
+        preTradeContext,
         strategies: pickStrategies(decision)
       };
       continue;

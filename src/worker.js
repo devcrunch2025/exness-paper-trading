@@ -11,6 +11,53 @@ function saveLiveReport(report) {
   fs.writeFileSync(LIVE_REPORT_PATH, JSON.stringify(report, null, 2), "utf-8");
 }
 
+function readLiveReport() {
+  if (!fs.existsSync(LIVE_REPORT_PATH)) return null;
+
+  try {
+    return JSON.parse(fs.readFileSync(LIVE_REPORT_PATH, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function mergePersistentActiveTrades(currentReport, previousReport) {
+  if (!config.preserveActiveTradesOnRestart) return currentReport;
+  if (!previousReport || !Array.isArray(previousReport.activeTrades) || !previousReport.activeTrades.length) {
+    return currentReport;
+  }
+
+  const tradeKey = (trade) => `${trade.id}|${trade.startDateTime}`;
+  const activeMap = new Map();
+
+  previousReport.activeTrades.forEach((trade) => {
+    activeMap.set(tradeKey(trade), trade);
+  });
+
+  (currentReport.activeTrades || []).forEach((trade) => {
+    activeMap.set(tradeKey(trade), trade);
+  });
+
+  const mergedActiveTrades = Array.from(activeMap.values());
+
+  const symbolCounts = mergedActiveTrades.reduce((acc, trade) => {
+    acc[trade.symbol] = (acc[trade.symbol] || 0) + 1;
+    return acc;
+  }, {});
+
+  const mergedSymbolReports = (currentReport.symbolReports || []).map((report) => ({
+    ...report,
+    activeTradesCount: symbolCounts[report.symbol] || 0
+  }));
+
+  return {
+    ...currentReport,
+    activeTrades: mergedActiveTrades,
+    activeTradesCount: mergedActiveTrades.length,
+    symbolReports: mergedSymbolReports
+  };
+}
+
 function readResetState() {
   if (!fs.existsSync(RESET_STATE_PATH)) return null;
 
@@ -30,6 +77,8 @@ function resetLiveReport(wallet) {
 }
 
 function runCycle({ candles, wallet }) {
+  const previousReport = readLiveReport();
+
   const result = runWatchlistSimulation({
     config,
     wallet,
@@ -38,7 +87,8 @@ function runCycle({ candles, wallet }) {
   });
 
   const resetState = readResetState();
-  const finalReport = resetState?.resetAt ? applyResetToReport(result, resetState.resetAt) : result;
+  const filteredReport = resetState?.resetAt ? applyResetToReport(result, resetState.resetAt) : result;
+  const finalReport = mergePersistentActiveTrades(filteredReport, previousReport);
 
   saveLiveReport(finalReport);
 

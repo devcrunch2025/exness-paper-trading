@@ -20,7 +20,7 @@
       <header class="hero">
         <div class="hero-topline">
           <div>
-            <h1>Paper Trading Control Room</h1>
+            <h2>EXNESS - Paper Trading Control Room</h2>
             <p>Multi-strategy simulation with risk-focused analytics and order-level filtering.</p>
           </div>
           <button id="clearOrdersBtn" class="danger-btn">Clear All Orders</button>
@@ -83,6 +83,14 @@
         <div class="orders-header">
           <h2>Active Trades</h2>
           <span id="activeTradeCount">0 open trades</span>
+        </div>
+        <div class="active-filter-grid">
+          <label>
+            Active Symbol
+            <select id="activeSymbolFilter">
+              <option value="ALL">All Watchlist</option>
+            </select>
+          </label>
         </div>
         <div class="table-wrap">
           <table>

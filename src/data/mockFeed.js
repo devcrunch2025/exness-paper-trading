@@ -4,6 +4,7 @@ function seededRandom(seed) {
 }
 
 function timeframeToMinutes(timeframe) {
+  if (timeframe === "M1") return 1;
   if (timeframe === "M5") return 5;
   if (timeframe === "M15") return 15;
   if (timeframe === "M30") return 30;

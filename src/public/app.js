@@ -10,6 +10,7 @@ const ui = {
   botFeedTrack: document.getElementById("botFeedTrack"),
   kpis: document.getElementById("kpis"),
   activeTradeCount: document.getElementById("activeTradeCount"),
+  activeSymbolFilter: document.getElementById("activeSymbolFilter"),
   activeTradesBody: document.getElementById("activeTradesTableBody"),
   orderCount: document.getElementById("orderCount"),
   tbody: document.getElementById("ordersTableBody")
@@ -141,6 +142,22 @@ function triggerBadge(triggerType) {
   return '<span class="badge">Open</span>';
 }
 
+function applyActiveTimeFilters(activeTrades) {
+  const fromInput = null;
+  const toInput = null;
+
+  const fromTs = fromInput ? new Date(fromInput).getTime() : null;
+  const toTs = toInput ? new Date(toInput).getTime() : null;
+
+  return (activeTrades || []).filter((trade) => {
+    const startTs = new Date(trade.startDateTime).getTime();
+    if (!Number.isFinite(startTs)) return false;
+    if (fromTs !== null && Number.isFinite(fromTs) && startTs < fromTs) return false;
+    if (toTs !== null && Number.isFinite(toTs) && startTs > toTs) return false;
+    return true;
+  });
+}
+
 function renderActiveTrades(activeTrades, endingBalance) {
   const sortedTrades = [...(activeTrades || [])].sort((left, right) => {
     const rightTime = new Date(right.startDateTime || 0).getTime();
@@ -150,8 +167,9 @@ function renderActiveTrades(activeTrades, endingBalance) {
 
   const floatingPnlTotal = getFloatingPnlTotal(sortedTrades);
   const liveEquity = Number((Number(endingBalance || 0) + floatingPnlTotal).toFixed(2));
+  const totalOpen = latestSimulation ? (latestSimulation.activeTrades || []).length : sortedTrades.length;
 
-  ui.activeTradeCount.textContent = `${sortedTrades.length} open trades | Floating ${fmtMoney(floatingPnlTotal)} | Live balance ${fmtMoney(liveEquity)}`;
+  ui.activeTradeCount.textContent = `${sortedTrades.length} / ${totalOpen} open trades | Floating ${fmtMoney(floatingPnlTotal)} | Live balance ${fmtMoney(liveEquity)}`;
 
   if (!sortedTrades.length) {
     ui.activeTradesBody.innerHTML = '<tr><td colspan="10">No active trades right now.</td></tr>';
@@ -188,6 +206,18 @@ function renderSymbolFilter(data) {
     .join("");
 
   ui.symbolFilter.value = options.includes(currentValue) ? currentValue : "ALL";
+}
+
+function renderActiveSymbolFilter(data) {
+  const symbols = data?.symbols || [];
+  const currentValue = ui.activeSymbolFilter.value || "ALL";
+  const options = ["ALL", ...symbols];
+
+  ui.activeSymbolFilter.innerHTML = options
+    .map((symbol) => `<option value="${symbol}">${symbol === "ALL" ? "All Watchlist" : symbol}</option>`)
+    .join("");
+
+  ui.activeSymbolFilter.value = options.includes(currentValue) ? currentValue : "ALL";
 }
 
 function applyOrderFilters(orders) {
@@ -247,6 +277,16 @@ function renderOrders(orders) {
     .join("");
 }
 
+function applyActiveFilters(activeTrades) {
+  const activeSymbol = ui.activeSymbolFilter.value;
+  const timeFiltered = applyActiveTimeFilters(activeTrades || []);
+
+  return timeFiltered.filter((trade) => {
+    if (activeSymbol !== "ALL" && trade.symbol !== activeSymbol) return false;
+    return true;
+  });
+}
+
 async function loadSimulation() {
   ui.runBtn.disabled = true;
   ui.runBtn.textContent = "Loading...";
@@ -261,11 +301,13 @@ async function loadSimulation() {
 
     latestSimulation = data;
     renderSymbolFilter(data);
+    renderActiveSymbolFilter(data);
     const filteredOrders = applyOrderFilters(data.orders || []);
+    const filteredActiveTrades = applyActiveFilters(data.activeTrades || []);
 
     renderBotFeed(data);
     renderKpis(data);
-    renderActiveTrades(data.activeTrades || [], data.endingBalance);
+    renderActiveTrades(filteredActiveTrades, data.endingBalance);
     renderOrders(filteredOrders);
   } catch (error) {
     ui.botFeedTrack.innerHTML = `<span class="ticker-item">${error.message}</span><span class="ticker-item">Waiting for live bot report...</span>`;
@@ -279,9 +321,11 @@ async function loadSimulation() {
   }
 }
 
-function refreshOrdersOnly() {
+function refreshFilteredTables() {
   if (!latestSimulation) return;
   const filteredOrders = applyOrderFilters(latestSimulation.orders || []);
+  const filteredActiveTrades = applyActiveFilters(latestSimulation.activeTrades || []);
+  renderActiveTrades(filteredActiveTrades, latestSimulation.endingBalance);
   renderOrders(filteredOrders);
 }
 
@@ -301,9 +345,10 @@ async function clearAllOrders() {
     const payload = await response.json();
     latestSimulation = payload.report;
     renderSymbolFilter(payload.report);
+    renderActiveSymbolFilter(payload.report);
     renderBotFeed(payload.report);
     renderKpis(payload.report);
-    renderActiveTrades(payload.report.activeTrades || [], payload.report.endingBalance);
+    renderActiveTrades(applyActiveFilters(payload.report.activeTrades || []), payload.report.endingBalance);
     renderOrders([]);
   } catch (error) {
     window.alert(error.message);
@@ -315,9 +360,10 @@ async function clearAllOrders() {
 
 ui.runBtn.addEventListener("click", loadSimulation);
 ui.clearOrdersBtn.addEventListener("click", clearAllOrders);
-ui.symbolFilter.addEventListener("change", refreshOrdersOnly);
-ui.side.addEventListener("change", refreshOrdersOnly);
-ui.outcome.addEventListener("change", refreshOrdersOnly);
-ui.minPnl.addEventListener("input", refreshOrdersOnly);
+ui.symbolFilter.addEventListener("change", refreshFilteredTables);
+ui.side.addEventListener("change", refreshFilteredTables);
+ui.outcome.addEventListener("change", refreshFilteredTables);
+ui.minPnl.addEventListener("input", refreshFilteredTables);
+ui.activeSymbolFilter.addEventListener("change", refreshFilteredTables);
 loadSimulation();
 setInterval(loadSimulation, 10000);

@@ -5,63 +5,454 @@
     "GBPUSD",
     "AUDUSD",
     "USDCHF",
-    "USDJPY"
+    "USDJPY",
+    "BTCUSD"
   ],
-  "timeframe": "M15",
+  "timeframe": "M1",
   "startingBalance": 100,
-  "capitalPerSymbol": 20,
-  "endingBalance": 100,
-  "netPnl": 0,
+  "capitalPerSymbol": 16.67,
+  "endingBalance": 90.02,
+  "netPnl": -9.98,
   "winRate": 0,
   "wins": 0,
-  "losses": 0,
-  "totalOrders": 0,
-  "activeTradesCount": 0,
-  "maxDrawdownPct": 0,
-  "orders": [],
-  "activeTrades": [],
+  "losses": 4,
+  "totalOrders": 4,
+  "activeTradesCount": 2,
+  "maxDrawdownPct": 15,
+  "orders": [
+    {
+      "id": "EURUSD-ORD-3",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 137,
+      "startDateTime": "2026-03-15T06:07:49.565Z",
+      "entry": 1.0943283161673278,
+      "stopLoss": 1.091828316167328,
+      "takeProfit": 1.0988283161673278,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.404,
+        "sellScore": 0.243,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "BUY",
+            "confidence": 1,
+            "weightedScore": 0.4
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "SELL",
+            "confidence": 0.695,
+            "weightedScore": 0.243
+          },
+          {
+            "strategy": "breakout",
+            "signal": "BUY",
+            "confidence": 0.016,
+            "weightedScore": 0.004
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 1.37,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 1.37,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "closedAt": 198,
+      "endDateTime": "2026-03-15T07:08:49.565Z",
+      "duration": "15.3h",
+      "triggerType": "STOP_LOSS",
+      "triggeredAtPrice": 1.09183,
+      "exit": 1.09183,
+      "pnl": -2.5,
+      "outcome": "LOSS",
+      "balanceAfter": 14.17,
+      "symbol": "EURUSD"
+    },
+    {
+      "id": "GBPUSD-ORD-3",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 137,
+      "startDateTime": "2026-03-15T06:07:49.565Z",
+      "entry": 1.2843283161673278,
+      "stopLoss": 1.2818283161673278,
+      "takeProfit": 1.2888283161673277,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.404,
+        "sellScore": 0.243,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "BUY",
+            "confidence": 1,
+            "weightedScore": 0.4
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "SELL",
+            "confidence": 0.695,
+            "weightedScore": 0.243
+          },
+          {
+            "strategy": "breakout",
+            "signal": "BUY",
+            "confidence": 0.016,
+            "weightedScore": 0.004
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 1.165,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 1.165,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "closedAt": 198,
+      "endDateTime": "2026-03-15T07:08:49.565Z",
+      "duration": "15.3h",
+      "triggerType": "STOP_LOSS",
+      "triggeredAtPrice": 1.28183,
+      "exit": 1.28183,
+      "pnl": -2.5,
+      "outcome": "LOSS",
+      "balanceAfter": 14.17,
+      "symbol": "GBPUSD"
+    },
+    {
+      "id": "AUDUSD-ORD-3",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 137,
+      "startDateTime": "2026-03-15T06:07:49.566Z",
+      "entry": 0.6743283161673305,
+      "stopLoss": 0.6718283161673305,
+      "takeProfit": 0.6788283161673304,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.404,
+        "sellScore": 0.243,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "BUY",
+            "confidence": 1,
+            "weightedScore": 0.4
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "SELL",
+            "confidence": 0.695,
+            "weightedScore": 0.243
+          },
+          {
+            "strategy": "breakout",
+            "signal": "BUY",
+            "confidence": 0.016,
+            "weightedScore": 0.004
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 2.243,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 2.243,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "closedAt": 198,
+      "endDateTime": "2026-03-15T07:08:49.566Z",
+      "duration": "15.3h",
+      "triggerType": "STOP_LOSS",
+      "triggeredAtPrice": 0.67183,
+      "exit": 0.67183,
+      "pnl": -2.5,
+      "outcome": "LOSS",
+      "balanceAfter": 14.17,
+      "symbol": "AUDUSD"
+    },
+    {
+      "id": "USDCHF-ORD-3",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 137,
+      "startDateTime": "2026-03-15T06:07:49.568Z",
+      "entry": 0.9043283161673304,
+      "stopLoss": 0.9018283161673305,
+      "takeProfit": 0.9088283161673304,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.404,
+        "sellScore": 0.243,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "BUY",
+            "confidence": 1,
+            "weightedScore": 0.4
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "SELL",
+            "confidence": 0.695,
+            "weightedScore": 0.243
+          },
+          {
+            "strategy": "breakout",
+            "signal": "BUY",
+            "confidence": 0.016,
+            "weightedScore": 0.004
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 1.663,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 1.663,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "closedAt": 198,
+      "endDateTime": "2026-03-15T07:08:49.568Z",
+      "duration": "15.3h",
+      "triggerType": "STOP_LOSS",
+      "triggeredAtPrice": 0.90183,
+      "exit": 0.90183,
+      "pnl": -2.5,
+      "outcome": "LOSS",
+      "balanceAfter": 14.17,
+      "symbol": "USDCHF"
+    }
+  ],
+  "activeTrades": [
+    {
+      "id": "GBPUSD-ORD-4",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 199,
+      "startDateTime": "2026-03-15T07:09:26.201Z",
+      "entry": 1.2809767242423344,
+      "stopLoss": 1.2784767242423345,
+      "takeProfit": 1.2854767242423344,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.263,
+        "sellScore": 0.255,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "SELL",
+            "confidence": 0.295,
+            "weightedScore": 0.118
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "BUY",
+            "confidence": 0.752,
+            "weightedScore": 0.263
+          },
+          {
+            "strategy": "breakout",
+            "signal": "SELL",
+            "confidence": 0.547,
+            "weightedScore": 0.137
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 0.901,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 0.901,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "currentPrice": 1.28081,
+      "triggerType": "OPEN",
+      "triggeredAtPrice": null,
+      "floatingPnl": -0.17,
+      "symbol": "GBPUSD"
+    },
+    {
+      "id": "GBPUSD-ORD-4",
+      "side": "BUY",
+      "lot": 0.01,
+      "openedAt": 199,
+      "startDateTime": "2026-03-15T07:09:49.565Z",
+      "entry": 1.2809767242423344,
+      "stopLoss": 1.2784767242423345,
+      "takeProfit": 1.2854767242423344,
+      "decision": {
+        "signal": "BUY",
+        "buyScore": 0.263,
+        "sellScore": 0.255,
+        "details": [
+          {
+            "strategy": "smaCross",
+            "signal": "SELL",
+            "confidence": 0.295,
+            "weightedScore": 0.118
+          },
+          {
+            "strategy": "rsiReversion",
+            "signal": "BUY",
+            "confidence": 0.752,
+            "weightedScore": 0.263
+          },
+          {
+            "strategy": "breakout",
+            "signal": "SELL",
+            "confidence": 0.547,
+            "weightedScore": 0.137
+          }
+        ]
+      },
+      "preTradeContext": {
+        "mode": "day_or_week",
+        "signal": "BUY",
+        "dayTrend": {
+          "direction": "BUY",
+          "changePct": 0.901,
+          "enoughData": false
+        },
+        "weekTrend": {
+          "direction": "BUY",
+          "changePct": 0.901,
+          "enoughData": false
+        },
+        "allowed": true
+      },
+      "strategies": [
+        "smaCross",
+        "rsiReversion",
+        "breakout"
+      ],
+      "currentPrice": 1.28081,
+      "triggerType": "OPEN",
+      "triggeredAtPrice": null,
+      "floatingPnl": -0.17,
+      "symbol": "GBPUSD"
+    }
+  ],
   "symbolReports": [
     {
       "symbol": "EURUSD",
-      "endingBalance": 20,
-      "netPnl": 0,
-      "totalOrders": 0,
+      "endingBalance": 14.17,
+      "netPnl": -2.5,
+      "totalOrders": 1,
       "winRate": 0,
       "activeTradesCount": 0
     },
     {
       "symbol": "GBPUSD",
-      "endingBalance": 20,
-      "netPnl": 0,
-      "totalOrders": 0,
+      "endingBalance": 14.17,
+      "netPnl": -2.5,
+      "totalOrders": 1,
       "winRate": 0,
-      "activeTradesCount": 0
+      "activeTradesCount": 2
     },
     {
       "symbol": "AUDUSD",
-      "endingBalance": 20,
-      "netPnl": 0,
-      "totalOrders": 0,
+      "endingBalance": 14.17,
+      "netPnl": -2.5,
+      "totalOrders": 1,
       "winRate": 0,
       "activeTradesCount": 0
     },
     {
       "symbol": "USDCHF",
-      "endingBalance": 20,
+      "endingBalance": 14.17,
+      "netPnl": -2.5,
+      "totalOrders": 1,
+      "winRate": 0,
+      "activeTradesCount": 0
+    },
+    {
+      "symbol": "USDJPY",
+      "endingBalance": 16.67,
       "netPnl": 0,
       "totalOrders": 0,
       "winRate": 0,
       "activeTradesCount": 0
     },
     {
-      "symbol": "USDJPY",
-      "endingBalance": 20,
+      "symbol": "BTCUSD",
+      "endingBalance": 16.67,
       "netPnl": 0,
       "totalOrders": 0,
       "winRate": 0,
       "activeTradesCount": 0
     }
   ],
-  "generatedAt": "2026-03-12T21:05:34.769Z",
-  "resetAt": "2026-03-12T21:05:10.132Z"
+  "generatedAt": "2026-03-15T07:10:49.579Z",
+  "resetAt": "2026-03-15T07:07:30.765Z"
 }
