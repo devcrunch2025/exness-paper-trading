@@ -1,6 +1,8 @@
 module.exports = {
   symbol: "EURUSD",
   safeSymbols: ["EURUSD", "GBPUSD", "AUDUSD", "USDCHF", "USDJPY", "BTCUSD"],
+  chartHistoryBars: 120,
+  chartHistoryTicks: 4000,
   timeframe: "M1",
   candles: 200,
   startingBalance: 100,

@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BTCUSDT Live + 1m Bars</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f1ea;
+            --panel: rgba(255, 252, 246, 0.96);
+            --border: rgba(35, 38, 45, 0.12);
+            --text: #1f2933;
+            --muted: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 30%),
+                radial-gradient(circle at top right, rgba(217, 119, 6, 0.14), transparent 24%),
+                linear-gradient(180deg, #f7f3ec 0%, var(--bg) 100%);
+            padding: 20px;
+        }
+
+        .shell {
+            max-width: 1480px;
+            margin: 0 auto;
+            display: grid;
+            gap: 16px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--panel);
+            backdrop-filter: blur(14px);
+        }
+
+        .title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(120px, 1fr));
+            gap: 10px;
+            min-width: min(100%, 620px);
+        }
+
+        .stat {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(35, 38, 45, 0.08);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--panel);
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(35, 38, 45, 0.08);
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .panel-note {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .chart-host {
+            width: 100%;
+        }
+
+        #liveChart {
+            height: 260px;
+        }
+
+        #barChart {
+            height: 620px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 14px 18px 18px;
+            border-top: 1px solid rgba(35, 38, 45, 0.06);
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 18px;
+            border-top: 1px solid rgba(35, 38, 45, 0.06);
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        .control-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #334155;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(35, 38, 45, 0.08);
+            background: rgba(255, 255, 255, 0.88);
+            font-size: 12px;
+        }
+
+        .swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            flex: 0 0 auto;
+        }
+
+        .footer-note {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 0 4px;
+        }
+
+        @media (max-width: 980px) {
+            .header {
+                flex-direction: column;
+            }
+
+            .status-grid {
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
+                min-width: 0;
+                width: 100%;
+            }
+
+            #barChart {
+                height: 520px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="header">
+            <div>
+                <h1 class="title">BTCUSDT Stream Test</h1>
+                <p class="subtitle">Live trade stream first, then 1 minute bars with EDGE ALGO markers and debug state.</p>
+            </div>
+            <div class="status-grid">
+                <div class="stat">
+                    <span class="stat-label">Last Price</span>
+                    <span class="stat-value" id="lastPrice">--</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Live Stream</span>
+                    <span class="stat-value" id="liveStatus">Connecting...</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">1m Bar Stream</span>
+                    <span class="stat-value" id="barStatus">Waiting...</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Latest Signal</span>
+                    <span class="stat-value" id="latestSignal">--</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">1. Live BTCUSDT Price</h2>
+                    <div class="panel-note">Recent aggregated trades from Binance, updated tick-by-tick.</div>
+                </div>
+                <div class="panel-note" id="liveMeta">Loading live history...</div>
+            </div>
+            <div id="liveChart" class="chart-host"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title">2. BTCUSDT 1 Minute Bars</h2>
+                    <div class="panel-note">EMA 21 / 50 / 200, RSI 14, PRE / BUY / SELL / STRONG markers, plus debug markers.</div>
+                </div>
+                <div class="panel-note" id="barMeta">Loading bar history...</div>
+            </div>
+            <div id="barChart" class="chart-host"></div>
+            <div class="controls" id="markerControls">
+                <label class="control-item">
+                    <input type="checkbox" data-line="emaFast" checked />
+                    EMA 21
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-line="emaSlow" checked />
+                    EMA 50
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-line="emaTrend" checked />
+                    EMA 200
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="buy" checked />
+                    STRONG BUY
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="sell" checked />
+                    STRONG SELL
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="pre" checked />
+                    Buy/Sell
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="strong" />
+                    STRONG
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="ema" />
+                    EMA Debug
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="rsi" />
+                    RSI Debug
+                </label>
+                <label class="control-item">
+                    <input type="checkbox" data-marker="trend" />
+                    Trend Debug
+                </label>
+            </div>
+            <div class="legend">
+                <span class="chip"><span class="swatch" style="background:#0f9d58"></span>TREND BUY</span>
+                <span class="chip"><span class="swatch" style="background:#c62828"></span>TREND SELL</span>
+                <span class="chip"><span class="swatch" style="background:#fb8c00"></span>BUY EXIT</span>
+                <span class="chip"><span class="swatch" style="background:#fb8c00"></span>SELL EXIT</span>
+                <span class="chip"><span class="swatch" style="background:#065f46"></span>STRONG BUY</span>
+                <span class="chip"><span class="swatch" style="background:#7f1d1d"></span>STRONG SELL</span>
+                <span class="chip"><span class="swatch" style="background:#0891b2"></span>EMA Debug</span>
+                <span class="chip"><span class="swatch" style="background:#f97316"></span>RSI Debug</span>
+                <span class="chip"><span class="swatch" style="background:#111827"></span>Trend Debug</span>
+            </div>
+        </section>
+
+        <p class="footer-note">If Binance blocks the browser request on your network, the page will still load but live data will not populate until access is available.</p>
+    </main>
+
+    <script>
+        const SYMBOL = "BTCUSDT";
+        const BAR_INTERVAL = "1m";
+        const BAR_LIMIT = 300;
+        const LIVE_TRADE_LIMIT = 250;
+        const EDGE = Object.freeze({
+            emaFast: 21,
+            emaSlow: 50,
+            emaTrend: 200,
+            rsiLength: 14,
+            rsiBuy: 55,
+            rsiSell: 45,
+            spikeMultiplier: 2.1,
+            spikeLookback: 18,
+            spikeSearchBars: 8,
+            minExitScore: 6,
+            minStrongScore: 7
+        });
+
+        const ui = {
+            lastPrice: document.getElementById("lastPrice"),
+            liveStatus: document.getElementById("liveStatus"),
+            barStatus: document.getElementById("barStatus"),
+            latestSignal: document.getElementById("latestSignal"),
+            liveMeta: document.getElementById("liveMeta"),
+            barMeta: document.getElementById("barMeta"),
+            markerToggles: Array.from(document.querySelectorAll("#markerControls input[data-marker]")),
+            lineToggles: Array.from(document.querySelectorAll("#markerControls input[data-line]"))
+        };
+
+        const markerVisibility = {
+            buy: true,
+            sell: true,
+            pre: true,
+            strong: false,
+            ema: false,
+            rsi: false,
+            trend: false
+        };
+
+        const lineVisibility = {
+            emaFast: true,
+            emaSlow: true,
+            emaTrend: true
+        };
+
+        const chartTheme = {
+            layout: {
+                background: { color: "#fffdf8" },
+                textColor: "#334155",
+                fontFamily: 'Segoe UI, Tahoma, sans-serif'
+            },
+            grid: {
+                vertLines: { color: "rgba(148, 163, 184, 0.22)" },
+                horzLines: { color: "rgba(148, 163, 184, 0.22)" }
+            },
+            rightPriceScale: {
+                borderColor: "rgba(100, 116, 139, 0.32)"
+            },
+            timeScale: {
+                borderColor: "rgba(100, 116, 139, 0.32)",
+                timeVisible: true,
+                secondsVisible: true
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal
+            }
+        };
+
+        function addSeriesCompat(chart, seriesType, options) {
+            if (seriesType === "area" && typeof chart.addAreaSeries === "function") {
+                return chart.addAreaSeries(options);
+            }
+            if (seriesType === "candlestick" && typeof chart.addCandlestickSeries === "function") {
+                return chart.addCandlestickSeries(options);
+            }
+            if (seriesType === "line" && typeof chart.addLineSeries === "function") {
+                return chart.addLineSeries(options);
+            }
+
+            if (typeof chart.addSeries === "function") {
+                const seriesMap = {
+                    area: LightweightCharts.AreaSeries,
+                    candlestick: LightweightCharts.CandlestickSeries,
+                    line: LightweightCharts.LineSeries
+                };
+                const seriesDef = seriesMap[seriesType];
+                if (seriesDef) {
+                    return chart.addSeries(seriesDef, options);
+                }
+            }
+
+            throw new Error(`Unsupported chart API for series type: ${seriesType}`);
+        }
+
+        function applyMarkersCompat(series, markers) {
+            if (typeof series.setMarkers === "function") {
+                series.setMarkers(markers);
+                return;
+            }
+
+            if (typeof LightweightCharts.createSeriesMarkers === "function") {
+                if (!state.markerLayer) {
+                    state.markerLayer = LightweightCharts.createSeriesMarkers(series, markers);
+                    return;
+                }
+
+                if (typeof state.markerLayer.setMarkers === "function") {
+                    state.markerLayer.setMarkers(markers);
+                    return;
+                }
+
+                state.markerLayer = LightweightCharts.createSeriesMarkers(series, markers);
+            }
+        }
+
+        const liveChart = LightweightCharts.createChart(document.getElementById("liveChart"), {
+            ...chartTheme,
+            height: 260,
+            handleScroll: true,
+            handleScale: true
+        });
+
+        const barChart = LightweightCharts.createChart(document.getElementById("barChart"), {
+            ...chartTheme,
+            height: 620,
+            handleScroll: true,
+            handleScale: true,
+            timeScale: {
+                ...chartTheme.timeScale,
+                secondsVisible: false
+            }
+        });
+
+        const liveSeries = addSeriesCompat(liveChart, "area", {
+            lineColor: "#0f766e",
+            topColor: "rgba(15, 118, 110, 0.28)",
+            bottomColor: "rgba(15, 118, 110, 0.02)",
+            lineWidth: 2,
+            priceLineColor: "#0f766e"
+        });
+
+        const candleSeries = addSeriesCompat(barChart, "candlestick", {
+            upColor: "#26a69a",
+            downColor: "#ef5350",
+            borderUpColor: "#26a69a",
+            borderDownColor: "#ef5350",
+            wickUpColor: "#26a69a",
+            wickDownColor: "#ef5350"
+        });
+
+        const emaFastSeries = addSeriesCompat(barChart, "line", {
+            color: "#1d4ed8",
+            lineWidth: 2,
+            title: "",
+            lastValueVisible: false,
+            priceLineVisible: false
+        });
+        const emaSlowSeries = addSeriesCompat(barChart, "line", {
+            color: "#7c3aed",
+            lineWidth: 2,
+            title: "",
+            lastValueVisible: false,
+            priceLineVisible: false
+        });
+        const emaTrendSeries = addSeriesCompat(barChart, "line", {
+            color: "#111827",
+            lineWidth: 2,
+            title: "",
+            lastValueVisible: false,
+            priceLineVisible: false
+        });
+
+        if (typeof emaFastSeries.applyOptions === "function") {
+            emaFastSeries.applyOptions({
+                title: "",
+                lastValueVisible: false,
+                priceLineVisible: false
+            });
+        }
+
+        if (typeof emaSlowSeries.applyOptions === "function") {
+            emaSlowSeries.applyOptions({
+                title: "",
+                lastValueVisible: false,
+                priceLineVisible: false
+            });
+        }
+
+        if (typeof emaTrendSeries.applyOptions === "function") {
+            emaTrendSeries.applyOptions({
+                title: "",
+                lastValueVisible: false,
+                priceLineVisible: false
+            });
+        }
+
+        const state = {
+            livePoints: [],
+            candles: [],
+            liveSocket: null,
+            barSocket: null,
+            markerLayer: null
+        };
+
+        function fmtPrice(value) {
+            return Number.isFinite(value) ? Number(value).toFixed(2) : "--";
+        }
+
+        function setLastPrice(value) {
+            ui.lastPrice.textContent = fmtPrice(value);
+        }
+
+        function toEpochSeconds(timestamp) {
+            return Math.floor(Number(timestamp) / 1000);
+        }
+
+        function isValidPoint(point) {
+            return point && Number.isFinite(point.time) && Number.isFinite(point.value);
+        }
+
+        function isValidCandle(candle) {
+            return (
+                candle &&
+                Number.isFinite(candle.time) &&
+                Number.isFinite(candle.open) &&
+                Number.isFinite(candle.high) &&
+                Number.isFinite(candle.low) &&
+                Number.isFinite(candle.close)
+            );
+        }
+
+        function dedupePointsByTime(points) {
+            const byTime = new Map();
+            points.forEach((point) => {
+                if (isValidPoint(point)) byTime.set(point.time, point);
+            });
+            return Array.from(byTime.values()).sort((left, right) => left.time - right.time);
+        }
+
+        function calculateEmaSeries(values, period) {
+            const result = Array(values.length).fill(null);
+            if (!Array.isArray(values) || values.length < period || period <= 0) return result;
+
+            const multiplier = 2 / (period + 1);
+            const seed = values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
+            let previous = seed;
+
+            result[period - 1] = Number(seed.toFixed(5));
+            for (let index = period; index < values.length; index += 1) {
+                previous = (values[index] - previous) * multiplier + previous;
+                result[index] = Number(previous.toFixed(5));
+            }
+
+            return result;
+        }
+
+        function calculateRsiSeries(values, length) {
+            const result = Array(values.length).fill(null);
+            if (!Array.isArray(values) || values.length <= length || length <= 0) return result;
+
+            let gainSum = 0;
+            let lossSum = 0;
+            for (let index = 1; index <= length; index += 1) {
+                const change = Number(values[index]) - Number(values[index - 1]);
+                if (!Number.isFinite(change)) return result;
+                if (change >= 0) gainSum += change;
+                else lossSum += Math.abs(change);
+            }
+
+            let avgGain = gainSum / length;
+            let avgLoss = lossSum / length;
+            result[length] = Number((avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)).toFixed(4));
+
+            for (let index = length + 1; index < values.length; index += 1) {
+                const change = Number(values[index]) - Number(values[index - 1]);
+                if (!Number.isFinite(change)) continue;
+                const gain = Math.max(change, 0);
+                const loss = Math.max(-change, 0);
+                avgGain = (avgGain * (length - 1) + gain) / length;
+                avgLoss = (avgLoss * (length - 1) + loss) / length;
+                result[index] = Number((avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)).toFixed(4));
+            }
+
+            return result;
+        }
+
+        function detectSpikeContextAt(candles, index) {
+            for (let offset = 0; offset <= EDGE.spikeSearchBars; offset += 1) {
+                const barIndex = index - offset;
+                if (barIndex < 0) continue;
+                if (barIndex + EDGE.spikeLookback >= candles.length) continue;
+
+                let avgRange = 0;
+                for (let look = barIndex + 1; look <= barIndex + EDGE.spikeLookback; look += 1) {
+                    const high = Number(candles[look]?.high);
+                    const low = Number(candles[look]?.low);
+                    if (!Number.isFinite(high) || !Number.isFinite(low)) {
+                        avgRange = 0;
+                        break;
+                    }
+                    avgRange += Math.abs(high - low);
+                }
+                avgRange = avgRange / EDGE.spikeLookback;
+                if (!Number.isFinite(avgRange) || avgRange <= 0) continue;
+
+                const bar = candles[barIndex];
+                const open = Number(bar?.open);
+                const close = Number(bar?.close);
+                const high = Number(bar?.high);
+                const low = Number(bar?.low);
+                if (!Number.isFinite(open) || !Number.isFinite(close) || !Number.isFinite(high) || !Number.isFinite(low)) continue;
+
+                const candleRange = high - low;
+                if (candleRange < avgRange * EDGE.spikeMultiplier) continue;
+
+                const body = Math.abs(open - close);
+                const upperWick = high - Math.max(open, close);
+                const lowerWick = Math.min(open, close) - low;
+                let isUp = upperWick > body * 1.5;
+                if (!isUp && !(lowerWick > body * 1.5)) isUp = close <= open;
+                return isUp ? "AFTER_SPIKE_UP" : "AFTER_SPIKE_DOWN";
+            }
+
+            return "NO_SPIKE";
+        }
+
+        function buildMarkers(candles, emaFast, emaSlow, emaTrend, rsiValues) {
+            const markers = [];
+            let latestSignal = "--";
+            let latestBuyMarker = null;
+            let latestSellMarker = null;
+            let latestBuyTime = null;
+            let latestSellTime = null;
+            let buySeqCount = 0;
+            let sellSeqCount = 0;
+
+            for (let index = 0; index < candles.length; index += 1) {
+                const candle = candles[index];
+                const close = Number(candle.close);
+                const high = Number(candle.high);
+                const low = Number(candle.low);
+                const emaFastValue = Number(emaFast[index]);
+                const emaSlowValue = Number(emaSlow[index]);
+                const emaTrendValue = Number(emaTrend[index]);
+                const rsiValue = Number(rsiValues[index]);
+
+                if (
+                    !Number.isFinite(close) ||
+                    !Number.isFinite(high) ||
+                    !Number.isFinite(low) ||
+                    !Number.isFinite(emaFastValue) ||
+                    !Number.isFinite(emaSlowValue) ||
+                    !Number.isFinite(emaTrendValue) ||
+                    !Number.isFinite(rsiValue)
+                ) {
+                    continue;
+                }
+
+                const bullTrend = close > emaTrendValue;
+                const bearTrend = close < emaTrendValue;
+                const emaBull = emaFastValue > emaSlowValue;
+                const emaBear = emaFastValue < emaSlowValue;
+                const rsiBull = rsiValue > EDGE.rsiBuy;
+                const rsiBear = rsiValue < EDGE.rsiSell;
+
+                const priceAboveEmaStack = close > emaFastValue && close > emaSlowValue;
+                const priceBelowEmaStack = close < emaFastValue && close < emaSlowValue;
+
+                // MT4-like behavior: trend-pre signals are driven by EMA stack and price position,
+                // not blocked solely by EMA200 lag.
+                const preBuy = emaBull && priceAboveEmaStack;
+                const preSell = emaBear && priceBelowEmaStack;
+
+                const trendBiasBuy = bullTrend || emaBull;
+                const trendBiasSell = bearTrend || emaBear;
+                if (preBuy) {
+                    buySeqCount += 1;
+                    sellSeqCount = 0;
+                } else if (preSell) {
+                    sellSeqCount += 1;
+                    buySeqCount = 0;
+                } else {
+                    buySeqCount = 0;
+                    sellSeqCount = 0;
+                }
+
+                const spikeContext = detectSpikeContextAt(candles, index);
+                const buySpikeBonus = spikeContext === "AFTER_SPIKE_DOWN" ? 1 : spikeContext === "AFTER_SPIKE_UP" ? -1 : 0;
+                const sellSpikeBonus = spikeContext === "AFTER_SPIKE_UP" ? 1 : spikeContext === "AFTER_SPIKE_DOWN" ? -1 : 0;
+                const buySeqBonus = buySeqCount === 2 ? 1 : buySeqCount >= 3 ? -1 : 0;
+                const sellSeqBonus = sellSeqCount === 2 ? 1 : sellSeqCount >= 3 ? -1 : 0;
+
+                const buyScore =
+                    (bullTrend ? 2 : 0) +
+                    (emaBull ? 2 : 0) +
+                    (rsiBull ? 2 : 0) +
+                    buySpikeBonus +
+                    buySeqBonus;
+
+                const sellScore =
+                    (bearTrend ? 2 : 0) +
+                    (emaBear ? 2 : 0) +
+                    (rsiBear ? 2 : 0) +
+                    sellSpikeBonus +
+                    sellSeqBonus;
+
+                const buy = preBuy && trendBiasBuy && rsiBull && buyScore >= EDGE.minExitScore;
+                const sell = preSell && trendBiasSell && rsiBear && sellScore >= EDGE.minExitScore;
+                const strongBuy = buy && buyScore >= EDGE.minStrongScore && close > emaFastValue && low > emaSlowValue;
+                const strongSell = sell && sellScore >= EDGE.minStrongScore && close < emaFastValue && high < emaSlowValue;
+
+                if (markerVisibility.pre && preBuy) markers.push({ time: candle.time, position: "aboveBar", color: "#0f9d58", shape: "circle", text: "BUY" });
+                if (markerVisibility.pre && preSell) markers.push({ time: candle.time, position: "belowBar", color: "#c62828", shape: "circle", text: "SELL" });
+                if (buy) {
+                    latestBuyMarker = { time: candle.time, position: "belowBar", color: "#fb8c00", shape: "arrowUp", text: "BUY EXIT" };
+                    latestBuyTime = candle.time;
+                }
+                if (sell) {
+                    latestSellMarker = { time: candle.time, position: "aboveBar", color: "#fb8c00", shape: "arrowDown", text: "SELL EXIT" };
+                    latestSellTime = candle.time;
+                }
+                if (markerVisibility.strong && strongBuy) {
+                    markers.push({ time: candle.time, position: "belowBar", color: "#065f46", shape: "arrowUp", text: "STRONG" });
+                }
+                if (markerVisibility.strong && strongSell) {
+                    markers.push({ time: candle.time, position: "aboveBar", color: "#7f1d1d", shape: "arrowDown", text: "STRONG" });
+                }
+                if (markerVisibility.ema && (emaBull || emaBear)) markers.push({ time: candle.time, position: emaBull ? "belowBar" : "aboveBar", color: "#0891b2", shape: "square", text: "EMA" });
+                if (markerVisibility.rsi && (rsiBull || rsiBear)) markers.push({ time: candle.time, position: rsiBull ? "belowBar" : "aboveBar", color: "#f97316", shape: "circle", text: "RSI" });
+                if (markerVisibility.trend && (bullTrend || bearTrend)) markers.push({ time: candle.time, position: bullTrend ? "belowBar" : "aboveBar", color: "#111827", shape: "circle", text: bullTrend ? "T+" : "T-" });
+            }
+
+            const canShowBuy = markerVisibility.buy && latestBuyMarker;
+            const canShowSell = markerVisibility.sell && latestSellMarker;
+
+            if (canShowBuy && canShowSell) {
+                if (Number(latestBuyTime) >= Number(latestSellTime)) {
+                    markers.push(latestBuyMarker);
+                    latestSignal = "BUY EXIT";
+                } else {
+                    markers.push(latestSellMarker);
+                    latestSignal = "SELL EXIT";
+                }
+            } else if (canShowBuy) {
+                markers.push(latestBuyMarker);
+                latestSignal = "BUY EXIT";
+            } else if (canShowSell) {
+                markers.push(latestSellMarker);
+                latestSignal = "SELL EXIT";
+            }
+
+            ui.latestSignal.textContent = latestSignal;
+            return markers;
+        }
+
+        function redrawBarChart() {
+            const closes = state.candles.map((candle) => candle.close);
+            const emaFast = calculateEmaSeries(closes, EDGE.emaFast);
+            const emaSlow = calculateEmaSeries(closes, EDGE.emaSlow);
+            const emaTrend = calculateEmaSeries(closes, EDGE.emaTrend);
+            const rsiValues = calculateRsiSeries(closes, EDGE.rsiLength);
+            const emaFastData = state.candles.map((candle, index) => ({ time: candle.time, value: emaFast[index] })).filter((point) => Number.isFinite(point.value));
+            const emaSlowData = state.candles.map((candle, index) => ({ time: candle.time, value: emaSlow[index] })).filter((point) => Number.isFinite(point.value));
+            const emaTrendData = state.candles.map((candle, index) => ({ time: candle.time, value: emaTrend[index] })).filter((point) => Number.isFinite(point.value));
+
+            candleSeries.setData(state.candles);
+            emaFastSeries.setData(lineVisibility.emaFast ? emaFastData : []);
+            emaSlowSeries.setData(lineVisibility.emaSlow ? emaSlowData : []);
+            emaTrendSeries.setData(lineVisibility.emaTrend ? emaTrendData : []);
+            applyMarkersCompat(candleSeries, buildMarkers(state.candles, emaFast, emaSlow, emaTrend, rsiValues));
+            ui.barMeta.textContent = `${state.candles.length} bars loaded`;
+        }
+
+        function setDefaultBarWindow() {
+            if (!state.candles.length) return;
+            const lastCandle = state.candles[state.candles.length - 1];
+            const to = Number(lastCandle?.time);
+            if (!Number.isFinite(to)) return;
+
+            // 2-hour default view for 1-minute bars.
+            const from = to - 2 * 60 * 60;
+            if (typeof barChart.timeScale === "function") {
+                barChart.timeScale().setVisibleRange({ from, to });
+            }
+        }
+
+        async function loadLiveHistory() {
+            ui.liveStatus.textContent = "Loading...";
+            const response = await fetch(`https://api.binance.com/api/v3/aggTrades?symbol=${SYMBOL}&limit=${LIVE_TRADE_LIMIT}`);
+            if (!response.ok) throw new Error(`Live history failed: ${response.status}`);
+
+            const payload = await response.json();
+            state.livePoints = dedupePointsByTime(payload
+                .map((trade) => ({ time: toEpochSeconds(trade.T), value: Number(trade.p) }))
+                .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.value)));
+
+            liveSeries.setData(state.livePoints);
+            liveChart.timeScale().fitContent();
+            setLastPrice(state.livePoints[state.livePoints.length - 1]?.value);
+            ui.liveStatus.textContent = "Live";
+            ui.liveMeta.textContent = `${state.livePoints.length} recent trades loaded`;
+        }
+
+        async function loadBarHistory() {
+            ui.barStatus.textContent = "Loading...";
+            const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${SYMBOL}&interval=${BAR_INTERVAL}&limit=${BAR_LIMIT}`);
+            if (!response.ok) throw new Error(`Bar history failed: ${response.status}`);
+
+            const payload = await response.json();
+            state.candles = payload.map((entry) => ({
+                time: toEpochSeconds(entry[0]),
+                open: Number(entry[1]),
+                high: Number(entry[2]),
+                low: Number(entry[3]),
+                close: Number(entry[4])
+            })).filter(isValidCandle);
+
+            redrawBarChart();
+            setDefaultBarWindow();
+            ui.barStatus.textContent = "Live";
+        }
+
+        function startLiveTradeStream() {
+            if (state.liveSocket) state.liveSocket.close();
+            const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${SYMBOL.toLowerCase()}@aggTrade`);
+            state.liveSocket = socket;
+
+            socket.onopen = () => {
+                ui.liveStatus.textContent = "Streaming";
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const point = { time: toEpochSeconds(message.T), value: Number(message.p) };
+                if (!isValidPoint(point)) return;
+
+                const previous = state.livePoints[state.livePoints.length - 1];
+                if (previous && previous.time === point.time) {
+                    state.livePoints[state.livePoints.length - 1] = point;
+                    liveSeries.update(point);
+                } else {
+                    if (previous && point.time < previous.time) return;
+                    state.livePoints.push(point);
+                    if (state.livePoints.length > LIVE_TRADE_LIMIT) {
+                        state.livePoints = dedupePointsByTime(state.livePoints.slice(-LIVE_TRADE_LIMIT * 2)).slice(-LIVE_TRADE_LIMIT);
+                        liveSeries.setData(state.livePoints);
+                    } else {
+                        liveSeries.update(point);
+                    }
+                }
+
+                setLastPrice(point.value);
+                ui.liveMeta.textContent = `Live trades streaming at ${new Date(message.T).toLocaleTimeString()}`;
+            };
+
+            socket.onerror = () => {
+                ui.liveStatus.textContent = "Error";
+            };
+
+            socket.onclose = () => {
+                if (state.liveSocket === socket) ui.liveStatus.textContent = "Closed";
+            };
+        }
+
+        function startBarStream() {
+            if (state.barSocket) state.barSocket.close();
+            const socket = new WebSocket(`wss://stream.binance.com:9443/ws/${SYMBOL.toLowerCase()}@kline_${BAR_INTERVAL}`);
+            state.barSocket = socket;
+
+            socket.onopen = () => {
+                ui.barStatus.textContent = "Streaming";
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const kline = message.k;
+                const candle = {
+                    time: toEpochSeconds(kline.t),
+                    open: Number(kline.o),
+                    high: Number(kline.h),
+                    low: Number(kline.l),
+                    close: Number(kline.c)
+                };
+                if (!isValidCandle(candle)) return;
+
+                if (!state.candles.length) {
+                    state.candles = [candle];
+                } else {
+                    const lastIndex = state.candles.length - 1;
+                    if (state.candles[lastIndex].time === candle.time) {
+                        state.candles[lastIndex] = candle;
+                    } else {
+                        state.candles.push(candle);
+                        state.candles = state.candles.slice(-BAR_LIMIT);
+                    }
+                }
+
+                redrawBarChart();
+                setLastPrice(candle.close);
+                ui.barMeta.textContent = `Last 1m update ${new Date(kline.T).toLocaleTimeString()}`;
+            };
+
+            socket.onerror = () => {
+                ui.barStatus.textContent = "Error";
+            };
+
+            socket.onclose = () => {
+                if (state.barSocket === socket) ui.barStatus.textContent = "Closed";
+            };
+        }
+
+        function resizeCharts() {
+            const liveHost = document.getElementById("liveChart");
+            const barHost = document.getElementById("barChart");
+            liveChart.applyOptions({ width: liveHost.clientWidth, height: liveHost.clientHeight });
+            barChart.applyOptions({ width: barHost.clientWidth, height: barHost.clientHeight });
+        }
+
+        function bindMarkerControls() {
+            ui.markerToggles.forEach((toggle) => {
+                const key = String(toggle.dataset.marker || "");
+                toggle.checked = Boolean(markerVisibility[key]);
+                toggle.addEventListener("change", () => {
+                    markerVisibility[key] = toggle.checked;
+                    if (state.candles.length) redrawBarChart();
+                });
+            });
+
+            ui.lineToggles.forEach((toggle) => {
+                const key = String(toggle.dataset.line || "");
+                toggle.checked = Boolean(lineVisibility[key]);
+                toggle.addEventListener("change", () => {
+                    lineVisibility[key] = toggle.checked;
+                    if (state.candles.length) redrawBarChart();
+                });
+            });
+        }
+
+        async function init() {
+            bindMarkerControls();
+
+            try {
+                await loadLiveHistory();
+                startLiveTradeStream();
+            } catch (error) {
+                ui.liveStatus.textContent = "Failed";
+                ui.liveMeta.textContent = error.message;
+            }
+
+            try {
+                await loadBarHistory();
+                startBarStream();
+            } catch (error) {
+                ui.barStatus.textContent = "Failed";
+                ui.barMeta.textContent = error.message;
+            }
+
+            resizeCharts();
+        }
+
+        window.addEventListener("resize", resizeCharts);
+        init();
+    </script>
+</body>
+</html>

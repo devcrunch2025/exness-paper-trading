@@ -3,11 +3,17 @@ const ui = {
   startingBalance: document.getElementById("startingBalance"),
   side: document.getElementById("side"),
   symbolFilter: document.getElementById("symbolFilter"),
+  manualSymbol: document.getElementById("manualSymbol"),
+  manualSide: document.getElementById("manualSide"),
+  manualPrice: document.getElementById("manualPrice"),
+  sendSignalBtn: document.getElementById("sendSignalBtn"),
+  manualSignalStatus: document.getElementById("manualSignalStatus"),
   outcome: document.getElementById("outcome"),
   minPnl: document.getElementById("minPnl"),
   clearOrdersBtn: document.getElementById("clearOrdersBtn"),
   runBtn: document.getElementById("runBtn"),
   botFeedTrack: document.getElementById("botFeedTrack"),
+  watchlistCharts: document.getElementById("watchlistCharts"),
   kpis: document.getElementById("kpis"),
   activeTradeCount: document.getElementById("activeTradeCount"),
   activeSymbolFilter: document.getElementById("activeSymbolFilter"),
@@ -17,6 +23,7 @@ const ui = {
 };
 
 let latestSimulation = null;
+let lastChartsGeneratedAt = null;
 
 function getFloatingPnlTotal(activeTrades) {
   return Number(
@@ -30,6 +37,13 @@ function getLiveEquity(data) {
 
 function fmtMoney(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+}
+
+function fmtPrice(value) {
+  if (!Number.isFinite(value)) return "-";
+  if (value >= 1000) return value.toFixed(2);
+  if (value >= 1) return value.toFixed(5);
+  return value.toFixed(6);
 }
 
 function fmtDateTime(value) {
@@ -142,6 +156,70 @@ function triggerBadge(triggerType) {
   return '<span class="badge">Open</span>';
 }
 
+function buildSparklinePoints(values, width, height, padding) {
+  if (!values || values.length < 2) return "";
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const xStep = (width - padding * 2) / (values.length - 1 || 1);
+  const spread = max - min || 1;
+
+  return values
+    .map((value, index) => {
+      const x = padding + index * xStep;
+      const y = height - padding - ((value - min) / spread) * (height - padding * 2);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
+
+function renderWatchlistCharts(payload) {
+  const charts = payload?.charts || [];
+
+  if (!charts.length) {
+    ui.watchlistCharts.innerHTML = '<article class="watch-card">No watchlist chart data</article>';
+    return;
+  }
+
+  ui.watchlistCharts.innerHTML = charts
+    .map((chart) => {
+      const isUp = chart.changePct >= 0;
+      const points = buildSparklinePoints(chart.closes || [], 200, 54, 4);
+      const color = isUp ? "#0f9d58" : "#c1121f";
+      const timeframeLabel = chart.candleMinutes ? `${chart.candleMinutes}m` : chart.timeframe || "-";
+
+      return `
+      <article class="watch-card">
+        <div class="watch-topline">
+          <div class="watch-symbol-wrap">
+            <span class="watch-symbol">${chart.symbol}</span>
+            <span class="watch-timeframe">${timeframeLabel}</span>
+          </div>
+          <span class="watch-change ${isUp ? "up" : "down"}">${isUp ? "+" : ""}${chart.changePct}%</span>
+        </div>
+        <div class="watch-price">${fmtPrice(chart.lastPrice)}</div>
+        <svg class="sparkline" viewBox="0 0 200 54" preserveAspectRatio="none" aria-label="${chart.symbol} sparkline">
+          <polyline fill="none" stroke="${color}" stroke-width="2" points="${points}"></polyline>
+        </svg>
+      </article>
+    `;
+    })
+    .join("");
+}
+
+async function loadWatchlistCharts() {
+  try {
+    const response = await fetch("/api/watchlist/charts?bars=90");
+    if (!response.ok) throw new Error("chart fetch failed");
+    const payload = await response.json();
+    if (payload?.generatedAt && payload.generatedAt === lastChartsGeneratedAt) return;
+    lastChartsGeneratedAt = payload?.generatedAt || null;
+    renderWatchlistCharts(payload);
+  } catch {
+    ui.watchlistCharts.innerHTML = '<article class="watch-card">Watchlist charts unavailable</article>';
+  }
+}
+
 function applyActiveTimeFilters(activeTrades) {
   const fromInput = null;
   const toInput = null;
@@ -218,6 +296,16 @@ function renderActiveSymbolFilter(data) {
     .join("");
 
   ui.activeSymbolFilter.value = options.includes(currentValue) ? currentValue : "ALL";
+}
+
+function renderManualSymbolOptions(data) {
+  const symbols = data?.symbols || [];
+  const currentValue = ui.manualSymbol.value;
+
+  ui.manualSymbol.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${symbol}</option>`).join("");
+
+  if (!symbols.length) return;
+  ui.manualSymbol.value = symbols.includes(currentValue) ? currentValue : symbols[0];
 }
 
 function applyOrderFilters(orders) {
@@ -302,6 +390,7 @@ async function loadSimulation() {
     latestSimulation = data;
     renderSymbolFilter(data);
     renderActiveSymbolFilter(data);
+    renderManualSymbolOptions(data);
     const filteredOrders = applyOrderFilters(data.orders || []);
     const filteredActiveTrades = applyActiveFilters(data.activeTrades || []);
 
@@ -312,6 +401,7 @@ async function loadSimulation() {
   } catch (error) {
     ui.botFeedTrack.innerHTML = `<span class="ticker-item">${error.message}</span><span class="ticker-item">Waiting for live bot report...</span>`;
     ui.kpis.innerHTML = `<article class="kpi"><div class="label">Live Report</div><div class="value negative">${error.message}</div></article>`;
+    ui.watchlistCharts.innerHTML = '<article class="watch-card">Watchlist charts unavailable</article>';
     ui.activeTradeCount.textContent = "0 open trades | Floating $0.00 | Live balance $0.00";
     ui.activeTradesBody.innerHTML = '<tr><td colspan="10">Live report unavailable.</td></tr>';
     ui.tbody.innerHTML = '<tr><td colspan="17">Live report unavailable.</td></tr>';
@@ -346,6 +436,7 @@ async function clearAllOrders() {
     latestSimulation = payload.report;
     renderSymbolFilter(payload.report);
     renderActiveSymbolFilter(payload.report);
+    renderManualSymbolOptions(payload.report);
     renderBotFeed(payload.report);
     renderKpis(payload.report);
     renderActiveTrades(applyActiveFilters(payload.report.activeTrades || []), payload.report.endingBalance);
@@ -358,6 +449,62 @@ async function clearAllOrders() {
   }
 }
 
+async function sendManualSignal() {
+  const symbol = ui.manualSymbol.value;
+  const side = ui.manualSide.value;
+  const rawPrice = ui.manualPrice.value.trim();
+  const parsedPrice = rawPrice === "" ? null : Number(rawPrice);
+
+  if (!symbol) {
+    ui.manualSignalStatus.textContent = "Select a symbol first.";
+    ui.manualSignalStatus.className = "manual-status error";
+    return;
+  }
+
+  if (rawPrice !== "" && (!Number.isFinite(parsedPrice) || parsedPrice <= 0)) {
+    ui.manualSignalStatus.textContent = "Price must be a positive number.";
+    ui.manualSignalStatus.className = "manual-status error";
+    return;
+  }
+
+  ui.sendSignalBtn.disabled = true;
+  ui.sendSignalBtn.textContent = "Sending...";
+  ui.manualSignalStatus.textContent = `Submitting ${side} signal for ${symbol}...`;
+  ui.manualSignalStatus.className = "manual-status";
+
+  try {
+    const response = await fetch("/api/manual-signal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, side, price: parsedPrice })
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.message || "Failed to submit signal");
+    }
+
+    latestSimulation = payload.report;
+    renderSymbolFilter(payload.report);
+    renderActiveSymbolFilter(payload.report);
+    renderManualSymbolOptions(payload.report);
+    renderBotFeed(payload.report);
+    renderKpis(payload.report);
+    renderActiveTrades(applyActiveFilters(payload.report.activeTrades || []), payload.report.endingBalance);
+    renderOrders(applyOrderFilters(payload.report.orders || []));
+
+    ui.manualPrice.value = "";
+    ui.manualSignalStatus.textContent = payload.message;
+    ui.manualSignalStatus.className = "manual-status success";
+  } catch (error) {
+    ui.manualSignalStatus.textContent = error.message;
+    ui.manualSignalStatus.className = "manual-status error";
+  } finally {
+    ui.sendSignalBtn.disabled = false;
+    ui.sendSignalBtn.textContent = "Send Signal";
+  }
+}
+
 ui.runBtn.addEventListener("click", loadSimulation);
 ui.clearOrdersBtn.addEventListener("click", clearAllOrders);
 ui.symbolFilter.addEventListener("change", refreshFilteredTables);
@@ -365,5 +512,8 @@ ui.side.addEventListener("change", refreshFilteredTables);
 ui.outcome.addEventListener("change", refreshFilteredTables);
 ui.minPnl.addEventListener("input", refreshFilteredTables);
 ui.activeSymbolFilter.addEventListener("change", refreshFilteredTables);
+ui.sendSignalBtn.addEventListener("click", sendManualSignal);
 loadSimulation();
-setInterval(loadSimulation, 10000);
+loadWatchlistCharts();
+setInterval(loadSimulation, 5000);
+setInterval(loadWatchlistCharts, 5000);

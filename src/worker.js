@@ -11,6 +11,35 @@ function saveLiveReport(report) {
   fs.writeFileSync(LIVE_REPORT_PATH, JSON.stringify(report, null, 2), "utf-8");
 }
 
+function buildChartHistory(report, previousReport) {
+  const symbols = report.symbols && report.symbols.length ? report.symbols : [report.symbol];
+  const previousHistory = previousReport?.chartHistoryBySymbol || {};
+  const lastPriceBySymbol = report.lastPriceBySymbol || {};
+  const tickLimit = Math.max(300, Number(config.chartHistoryTicks || 1500));
+  const generatedAtMs = new Date(report.generatedAt || Date.now()).getTime();
+  const pointTimestamp = Number.isFinite(generatedAtMs) && generatedAtMs > 0 ? generatedAtMs : Date.now();
+
+  const chartHistoryBySymbol = symbols.reduce((acc, symbol) => {
+    const baseline = Array.isArray(previousHistory[symbol]) ? [...previousHistory[symbol]] : [];
+    const lastKnownPrice = Number(lastPriceBySymbol[symbol]);
+
+    if (Number.isFinite(lastKnownPrice) && lastKnownPrice > 0) {
+      baseline.push({
+        ts: pointTimestamp,
+        price: Number(lastKnownPrice.toFixed(5))
+      });
+    }
+
+    acc[symbol] = baseline.slice(-tickLimit);
+    return acc;
+  }, {});
+
+  return {
+    ...report,
+    chartHistoryBySymbol
+  };
+}
+
 function readLiveReport() {
   if (!fs.existsSync(LIVE_REPORT_PATH)) return null;
 
@@ -21,10 +50,59 @@ function readLiveReport() {
   }
 }
 
+function activeTradeTimestamp(trade) {
+  const startTs = new Date(trade.startDateTime || 0).getTime();
+  if (Number.isFinite(startTs) && startTs > 0) return startTs;
+
+  const openedAt = Number(trade.openedAt || 0);
+  if (Number.isFinite(openedAt) && openedAt > 0) return openedAt;
+
+  return 0;
+}
+
+function keepSingleActiveTradePerSymbol(trades) {
+  const symbolMap = new Map();
+
+  (trades || []).forEach((trade) => {
+    const symbol = trade.symbol;
+    if (!symbol) return;
+
+    const existing = symbolMap.get(symbol);
+    if (!existing) {
+      symbolMap.set(symbol, trade);
+      return;
+    }
+
+    if (activeTradeTimestamp(trade) >= activeTradeTimestamp(existing)) {
+      symbolMap.set(symbol, trade);
+    }
+  });
+
+  return Array.from(symbolMap.values()).sort((left, right) => activeTradeTimestamp(right) - activeTradeTimestamp(left));
+}
+
+function normalizeActiveTradesInReport(report, trades) {
+  const normalizedTrades = keepSingleActiveTradePerSymbol(trades || []);
+  const activeCounts = normalizedTrades.reduce((acc, trade) => {
+    acc[trade.symbol] = (acc[trade.symbol] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    ...report,
+    activeTrades: normalizedTrades,
+    activeTradesCount: normalizedTrades.length,
+    symbolReports: (report.symbolReports || []).map((entry) => ({
+      ...entry,
+      activeTradesCount: activeCounts[entry.symbol] || 0
+    }))
+  };
+}
+
 function mergePersistentActiveTrades(currentReport, previousReport) {
   if (!config.preserveActiveTradesOnRestart) return currentReport;
   if (!previousReport || !Array.isArray(previousReport.activeTrades) || !previousReport.activeTrades.length) {
-    return currentReport;
+    return normalizeActiveTradesInReport(currentReport, currentReport.activeTrades || []);
   }
 
   const tradeKey = (trade) => `${trade.id}|${trade.startDateTime}`;
@@ -38,24 +116,7 @@ function mergePersistentActiveTrades(currentReport, previousReport) {
     activeMap.set(tradeKey(trade), trade);
   });
 
-  const mergedActiveTrades = Array.from(activeMap.values());
-
-  const symbolCounts = mergedActiveTrades.reduce((acc, trade) => {
-    acc[trade.symbol] = (acc[trade.symbol] || 0) + 1;
-    return acc;
-  }, {});
-
-  const mergedSymbolReports = (currentReport.symbolReports || []).map((report) => ({
-    ...report,
-    activeTradesCount: symbolCounts[report.symbol] || 0
-  }));
-
-  return {
-    ...currentReport,
-    activeTrades: mergedActiveTrades,
-    activeTradesCount: mergedActiveTrades.length,
-    symbolReports: mergedSymbolReports
-  };
+  return normalizeActiveTradesInReport(currentReport, Array.from(activeMap.values()));
 }
 
 function readResetState() {
@@ -89,11 +150,12 @@ function runCycle({ candles, wallet }) {
   const resetState = readResetState();
   const filteredReport = resetState?.resetAt ? applyResetToReport(result, resetState.resetAt) : result;
   const finalReport = mergePersistentActiveTrades(filteredReport, previousReport);
+  const reportWithCharts = buildChartHistory(finalReport, previousReport);
 
-  saveLiveReport(finalReport);
+  saveLiveReport(reportWithCharts);
 
   console.log(
-    `[BOT] ${new Date().toISOString()} | symbols=${finalReport.symbols.join(",")} | wallet=$${wallet.toFixed(2)} | orders=${finalReport.totalOrders} | winRate=${finalReport.winRate}% | netPnl=$${finalReport.netPnl} | ending=$${finalReport.endingBalance}`
+    `[BOT] ${new Date().toISOString()} | symbols=${reportWithCharts.symbols.join(",")} | wallet=$${wallet.toFixed(2)} | orders=${reportWithCharts.totalOrders} | winRate=${reportWithCharts.winRate}% | netPnl=$${reportWithCharts.netPnl} | ending=$${reportWithCharts.endingBalance}`
   );
 }
 

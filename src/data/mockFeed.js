@@ -14,21 +14,28 @@ function timeframeToMinutes(timeframe) {
   return 15;
 }
 
-function generateCandles(count, startPrice = 1.08, timeframe = "M15") {
+function generateCandles(count, startPrice = 1.08, timeframe = "M15", options = {}) {
   const candles = [];
   let price = startPrice;
   const stepMinutes = timeframeToMinutes(timeframe);
   const startTime = Date.now() - count * stepMinutes * 60 * 1000;
+  const liveSeed = Number(options.seedOffset);
+  const seedOffset = Number.isFinite(liveSeed) ? liveSeed : Math.floor(Date.now() / 5000);
+  const volatility = Number.isFinite(Number(options.volatility)) ? Number(options.volatility) : 1;
 
   for (let i = 0; i < count; i += 1) {
-    const drift = Math.sin(i / 50) * 0.00015;
-    const noise = (seededRandom(i + 1) - 0.5) * 0.0015;
-    const impulse = i % 120 === 0 ? (seededRandom(i + 9) - 0.5) * 0.003 : 0;
+    const phase = i + seedOffset;
+    // Percent-based movement keeps behavior realistic across low and high priced symbols.
+    const driftPct = Math.sin(phase / 50) * 0.00012 * volatility;
+    const noisePct = (seededRandom(phase + 1) - 0.5) * 0.0012 * volatility;
+    const impulsePct = phase % 120 === 0 ? (seededRandom(phase + 9) - 0.5) * 0.0025 * volatility : 0;
 
     const open = price;
-    const close = Math.max(0.0001, open + drift + noise + impulse);
-    const high = Math.max(open, close) + Math.abs((seededRandom(i + 2) - 0.5) * 0.0012);
-    const low = Math.min(open, close) - Math.abs((seededRandom(i + 3) - 0.5) * 0.0012);
+    const close = Math.max(0.0001, open * (1 + driftPct + noisePct + impulsePct));
+    const highWickPct = Math.abs((seededRandom(phase + 2) - 0.5) * 0.0012 * volatility);
+    const lowWickPct = Math.abs((seededRandom(phase + 3) - 0.5) * 0.0012 * volatility);
+    const high = Math.max(open, close) * (1 + highWickPct);
+    const low = Math.max(0.0001, Math.min(open, close) * (1 - lowWickPct));
 
     candles.push({
       timestamp: i,

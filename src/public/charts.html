@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watchlist Charts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+
+    <main class="dashboard chart-page chart-only-page">
+      <section class="chart-grid focus-layout" id="chartGrid" aria-label="Watchlist charts">
+        <article class="panel empty-panel">Loading charts...</article>
+      </section>
+    </main>
+
+    <div id="chartPopup" class="chart-popup" aria-hidden="true">
+      <div id="chartPopupBackdrop" class="chart-popup-backdrop"></div>
+      <section class="chart-popup-panel" role="dialog" aria-modal="true" aria-labelledby="chartPopupTitle">
+        <header class="chart-popup-header">
+          <div>
+            <h2 id="chartPopupTitle">Live Chart</h2>
+            <p id="chartPopupMeta" class="chart-popup-meta">TradingView live chart</p>
+          </div>
+          <div class="chart-popup-actions">
+            <span id="chartPopupStatus" class="chart-popup-status">Loading...</span>
+            <button id="chartPopupClose" type="button" class="tv-maximize-btn close-btn">Close</button>
+          </div>
+        </header>
+
+        <div id="popupTradingViewHost" class="popup-tv-host"></div>
+        <div id="popupLocalHost" class="popup-local-host"></div>
+      </section>
+    </div>
+
+    <script src="charts.js"></script>
+  </body>
+</html>

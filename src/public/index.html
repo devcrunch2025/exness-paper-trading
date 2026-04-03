@@ -23,7 +23,11 @@
             <h2>EXNESS - Paper Trading Control Room</h2>
             <p>Multi-strategy simulation with risk-focused analytics and order-level filtering.</p>
           </div>
-          <button id="clearOrdersBtn" class="danger-btn">Clear All Orders</button>
+          <div class="hero-actions">
+            <a href="/charts" class="ghost-link">Open Charts</a>
+            <a href="/browser" class="ghost-link">Open Browser</a>
+            <button id="clearOrdersBtn" class="danger-btn">Clear All Orders</button>
+          </div>
         </div>
       </header>
 
@@ -33,6 +37,16 @@
           <div class="ticker-track" id="botFeedTrack">
             <span class="ticker-item">Waiting for live bot report...</span>
           </div>
+        </div>
+      </section>
+
+      <section class="panel watchlist-charts-panel" aria-label="Watchlist Live Charts">
+        <div class="orders-header">
+          <h2>Watchlist Live Charts</h2>
+          <span>1m Candles | Single Row</span>
+        </div>
+        <div class="watchlist-row" id="watchlistCharts">
+          <article class="watch-card">Loading watchlist charts...</article>
         </div>
       </section>
 
@@ -75,6 +89,30 @@
           </label>
           <button id="runBtn" class="run-btn">Refresh Report</button>
         </div>
+      </section>
+
+      <section class="panel manual-signal-panel">
+        <h2>Manual Signal</h2>
+        <p class="manual-subtitle">Enter your own BUY or SELL signal and open a paper trade instantly.</p>
+        <div class="manual-grid">
+          <label>
+            Symbol
+            <select id="manualSymbol"></select>
+          </label>
+          <label>
+            Side
+            <select id="manualSide">
+              <option value="BUY">Buy</option>
+              <option value="SELL">Sell</option>
+            </select>
+          </label>
+          <label>
+            Price (optional)
+            <input id="manualPrice" type="number" min="0" step="0.00001" placeholder="Use current market if empty" />
+          </label>
+          <button id="sendSignalBtn" class="run-btn">Send Signal</button>
+        </div>
+        <div id="manualSignalStatus" class="manual-status">Ready</div>
       </section>
 
       <section class="kpi-grid" id="kpis"></section>

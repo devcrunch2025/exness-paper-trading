@@ -21,10 +21,16 @@ function toOrderId(symbol, orderId) {
 function runWatchlistSimulation({ config, wallet, candles, symbols }) {
   const safeSymbols = symbols && symbols.length ? symbols : [config.symbol];
   const capitalPerSymbol = Number((wallet / safeSymbols.length).toFixed(2));
+  const seedBase = Math.floor(Date.now() / 5000);
 
-  const reports = safeSymbols.map((symbol) => {
+  const reports = safeSymbols.map((symbol, index) => {
+    const symbolSeedOffset = seedBase + (index + 1) * 97;
+    const candleSeries = generateCandles(candles, getStartPrice(symbol), config.timeframe, {
+      seedOffset: symbolSeedOffset
+    });
+
     const result = runPaperSimulation({
-      candles: generateCandles(candles, getStartPrice(symbol), config.timeframe),
+      candles: candleSeries,
       config: {
         ...config,
         symbol,
@@ -35,6 +41,7 @@ function runWatchlistSimulation({ config, wallet, candles, symbols }) {
 
     return {
       ...result,
+      latestPrice: Number(candleSeries[candleSeries.length - 1]?.close?.toFixed(5) || 0),
       orders: result.orders.map((order) => ({
         ...order,
         id: toOrderId(symbol, order.id),
@@ -59,6 +66,10 @@ function runWatchlistSimulation({ config, wallet, candles, symbols }) {
   const maxDrawdownPct = Number(
     Math.max(...reports.map((report) => report.maxDrawdownPct || 0), 0).toFixed(2)
   );
+  const lastPriceBySymbol = reports.reduce((acc, report) => {
+    acc[report.symbol] = report.latestPrice;
+    return acc;
+  }, {});
 
   return {
     symbol: safeSymbols[0],
@@ -76,6 +87,7 @@ function runWatchlistSimulation({ config, wallet, candles, symbols }) {
     maxDrawdownPct,
     orders,
     activeTrades,
+    lastPriceBySymbol,
     symbolReports: reports.map((report) => ({
       symbol: report.symbol,
       endingBalance: report.endingBalance,

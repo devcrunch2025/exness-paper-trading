@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GUI Browser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+
+    <main class="dashboard browser-page">
+      <header class="panel browser-hero">
+        <div class="hero-topline">
+          <div>
+            <p class="eyebrow">Exness Workspace</p>
+            <h1>GUI Browser</h1>
+            <p>Browse the local trading app with desktop-style controls, shortcuts, and a live embedded view.</p>
+          </div>
+          <div class="hero-actions">
+            <a href="/" class="ghost-link">Dashboard</a>
+            <a href="/charts" class="ghost-link">Charts</a>
+            <div id="browserStatus" class="refresh-pill">Ready</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="browser-shell">
+        <aside class="panel browser-sidebar">
+          <div class="browser-sidebar-block">
+            <div class="browser-sidebar-label">Quick Open</div>
+            <div class="browser-shortcuts">
+              <button class="browser-shortcut" data-path="/">Control Room</button>
+              <button class="browser-shortcut" data-path="/charts">Charts Board</button>
+              <button class="browser-shortcut" data-path="/api/report">Live Report JSON</button>
+              <button class="browser-shortcut" data-path="/api/watchlist/charts?bars=120">Charts API</button>
+            </div>
+          </div>
+
+          <div class="browser-sidebar-block">
+            <div class="browser-sidebar-label">Browser Notes</div>
+            <div class="browser-note-list">
+              <div class="browser-note">Embedded browsing is limited to this local app.</div>
+              <div class="browser-note">Use the address bar for app routes like `/`, `/charts`, or `/api/report`.</div>
+              <div class="browser-note">Back, forward, reload, and pop-out are available from the toolbar.</div>
+            </div>
+          </div>
+
+          <div class="browser-sidebar-block">
+            <div class="browser-sidebar-label">Session</div>
+            <div id="browserMeta" class="browser-meta">No page loaded yet.</div>
+          </div>
+        </aside>
+
+        <section class="panel browser-main">
+          <div class="browser-toolbar">
+            <div class="browser-nav-group">
+              <button id="backBtn" class="browser-nav-btn" type="button" aria-label="Back">Back</button>
+              <button id="forwardBtn" class="browser-nav-btn" type="button" aria-label="Forward">Forward</button>
+              <button id="reloadBtn" class="browser-nav-btn" type="button" aria-label="Reload">Reload</button>
+            </div>
+
+            <form id="addressForm" class="browser-address-form">
+              <label class="browser-address-label" for="addressInput">Address</label>
+              <input id="addressInput" class="browser-address" type="text" value="/charts" spellcheck="false" />
+              <button class="run-btn browser-open-btn" type="submit">Open</button>
+            </form>
+
+            <div class="browser-nav-group">
+              <button id="popoutBtn" class="browser-nav-btn" type="button" aria-label="Open in tab">Pop Out</button>
+            </div>
+          </div>
+
+          <div class="browser-tabbar">
+            <div class="browser-tab active">Local App View</div>
+            <div id="activePathPill" class="browser-path-pill">/charts</div>
+          </div>
+
+          <div id="browserMessage" class="browser-message"></div>
+
+          <div class="browser-viewport-wrap">
+            <iframe
+              id="browserFrame"
+              class="browser-frame"
+              title="Embedded app browser"
+              src="/charts"
+              loading="eager"
+              referrerpolicy="same-origin"
+            ></iframe>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="browser.js"></script>
+  </body>
+</html>
