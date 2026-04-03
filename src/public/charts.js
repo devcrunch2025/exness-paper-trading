@@ -705,6 +705,262 @@ function refreshLiveBadges() {
   });
 }
 
+// ─── Watchlist Editor ──────────────────────────────────────────────────────
+
+let allBinanceSymbols = [];
+
+function injectEditorStyles() {
+  if (document.getElementById("wlEditorStyles")) return;
+  const style = document.createElement("style");
+  style.id = "wlEditorStyles";
+  style.textContent = `
+    .watchlist-nav-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(35,38,45,0.1);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .watchlist-nav-title { font-weight: 700; font-size: 1rem; color: #1e293b; }
+    .wl-btn-edit {
+      background: #1d4ed8; color: #fff; border: none; border-radius: 8px;
+      padding: 7px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+    .wl-btn-edit:hover { background: #1e40af; }
+    .wl-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.42);
+      z-index: 9000; display: flex; align-items: stretch; justify-content: flex-end;
+    }
+    .wl-overlay[hidden] { display: none !important; }
+    .wl-dialog {
+      background: #fff; width: min(400px, 100vw); height: 100%;
+      overflow-y: auto; box-shadow: -4px 0 28px rgba(0,0,0,0.14);
+      display: flex; flex-direction: column;
+    }
+    .wl-dialog-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px; border-bottom: 1px solid #e2e8f0;
+      position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .wl-dialog-head h2 { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .wl-btn-close {
+      background: none; border: none; font-size: 1rem; cursor: pointer;
+      color: #64748b; width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center; border-radius: 6px;
+    }
+    .wl-btn-close:hover { background: #f1f5f9; color: #1e293b; }
+    .wl-section { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+    .wl-section h3 {
+      font-size: 0.73rem; font-weight: 600; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px;
+    }
+    .wl-chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; }
+    .wl-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      color: #1d4ed8; border-radius: 20px;
+      padding: 4px 8px 4px 12px; font-size: 0.82rem; font-weight: 600;
+    }
+    .wl-chip-remove {
+      background: none; border: none; cursor: pointer; color: #93c5fd;
+      font-size: 0.8rem; line-height: 1; padding: 1px 3px; border-radius: 50%;
+    }
+    .wl-chip-remove:hover { background: #bfdbfe; color: #1e40af; }
+    #wlSearch {
+      width: 100%; box-sizing: border-box; padding: 9px 12px;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 0.9rem; outline: none; background: #f8fafc; margin-bottom: 8px;
+    }
+    #wlSearch:focus { border-color: #93c5fd; background: #fff; }
+    .wl-results {
+      max-height: 420px; overflow-y: auto;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+    }
+    .wl-result-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer;
+    }
+    .wl-result-item:last-child { border-bottom: none; }
+    .wl-result-item:hover { background: #f0f9ff; }
+    .wl-result-item.already-added { opacity: 0.45; pointer-events: none; }
+    .wl-result-sym { font-weight: 600; font-size: 0.875rem; color: #1e293b; }
+    .wl-result-add {
+      font-size: 0.75rem; font-weight: 600; color: #1d4ed8;
+      background: #eff6ff; border-radius: 6px; padding: 3px 8px;
+    }
+    .wl-result-item.already-added .wl-result-add { color: #94a3b8; background: #f1f5f9; }
+    .wl-empty, .wl-loading { padding: 16px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+  `;
+  document.head.appendChild(style);
+}
+
+async function fetchBinanceMarkets() {
+  if (allBinanceSymbols.length > 0) return allBinanceSymbols;
+  const response = await fetch("https://api.binance.com/api/v3/exchangeInfo");
+  if (!response.ok) throw new Error(`Exchange info failed (${response.status})`);
+  const data = await response.json();
+  allBinanceSymbols = data.symbols
+    .filter((s) => s.status === "TRADING")
+    .map((s) => s.symbol)
+    .sort();
+  return allBinanceSymbols;
+}
+
+function renderEditorChips() {
+  const container = document.getElementById("wlChips");
+  if (!container) return;
+  const current = readWatchlist();
+  if (!current.length) {
+    container.innerHTML = '<span style="color:#94a3b8;font-size:0.85rem;">Empty — add symbols below.</span>';
+    return;
+  }
+  container.innerHTML = current
+    .map(
+      (sym) =>
+        `<span class="wl-chip">${sym}<button class="wl-chip-remove" data-remove="${sym}" aria-label="Remove ${sym}">&#x2715;</button></span>`
+    )
+    .join("");
+}
+
+function renderSearchResults(query) {
+  const container = document.getElementById("wlResults");
+  if (!container) return;
+  const current = new Set(readWatchlist());
+
+  if (allBinanceSymbols.length === 0) {
+    container.innerHTML = '<div class="wl-loading">Loading markets from Binance…</div>';
+    return;
+  }
+
+  const trimmed = (query || "").trim().toUpperCase();
+  const matches = trimmed
+    ? allBinanceSymbols.filter((sym) => sym.includes(trimmed)).slice(0, 40)
+    : allBinanceSymbols.filter((sym) => sym.endsWith("USDT")).slice(0, 40);
+
+  if (!matches.length) {
+    container.innerHTML = '<div class="wl-empty">No markets matched.</div>';
+    return;
+  }
+
+  container.innerHTML = matches
+    .map((sym) => {
+      const added = current.has(sym);
+      return `<div class="wl-result-item${added ? " already-added" : ""}" data-add="${sym}"><span class="wl-result-sym">${sym}</span><span class="wl-result-add">${added ? "Added" : "+ Add"}</span></div>`;
+    })
+    .join("");
+}
+
+function saveWatchlistSymbols(symbols) {
+  window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(symbols));
+}
+
+async function handleAddSymbol(symbol) {
+  const current = readWatchlist();
+  if (current.includes(symbol)) return;
+  const updated = [...current, symbol];
+  saveWatchlistSymbols(updated);
+
+  const upGrid = document.getElementById("upTrendGrid");
+  if (upGrid) upGrid.insertAdjacentHTML("beforeend", buildCardHtml(symbol));
+
+  const state = createChartState(symbol);
+  if (state) {
+    chartStates.set(symbol, state);
+    try {
+      setCardMeta(symbol, "Loading Binance history…");
+      state.candles = await loadHistory(symbol);
+      redrawSymbol(state);
+      state.chart.timeScale().setVisibleRange({
+        from: state.candles[state.candles.length - 1].time - 2 * 60 * 60,
+        to: state.candles[state.candles.length - 1].time
+      });
+      setCardMeta(symbol, "Live 1m Binance feed");
+    } catch (error) {
+      setCardMeta(symbol, String(error?.message || "Failed to load"));
+    }
+  }
+
+  connectCombinedKlineStream(updated);
+  renderEditorChips();
+  renderSearchResults(document.getElementById("wlSearch")?.value || "");
+}
+
+function handleRemoveSymbol(symbol) {
+  const current = readWatchlist();
+  const updated = current.filter((s) => s !== symbol);
+  saveWatchlistSymbols(updated);
+
+  const card = document.getElementById(`card-${symbol}`);
+  if (card) card.remove();
+
+  const state = chartStates.get(symbol);
+  if (state) {
+    try {
+      if (state.resizeObserver) state.resizeObserver.disconnect();
+      state.chart.remove();
+    } catch {}
+    chartStates.delete(symbol);
+  }
+
+  updateTrendCounts();
+
+  if (updated.length > 0) {
+    connectCombinedKlineStream(updated);
+  } else if (ws) {
+    try { ws.close(); } catch {}
+    ws = null;
+  }
+
+  renderEditorChips();
+  renderSearchResults(document.getElementById("wlSearch")?.value || "");
+}
+
+function openWatchlistEditor() {
+  const overlay = document.getElementById("watchlistEditorOverlay");
+  if (!overlay) return;
+  overlay.removeAttribute("hidden");
+  renderEditorChips();
+  if (allBinanceSymbols.length === 0) {
+    const results = document.getElementById("wlResults");
+    if (results) results.innerHTML = '<div class="wl-loading">Loading markets from Binance…</div>';
+    fetchBinanceMarkets()
+      .then(() => renderSearchResults(document.getElementById("wlSearch")?.value || ""))
+      .catch(() => {
+        const r = document.getElementById("wlResults");
+        if (r) r.innerHTML = '<div class="wl-empty">Failed to load markets. Check connection.</div>';
+      });
+  } else {
+    renderSearchResults(document.getElementById("wlSearch")?.value || "");
+  }
+}
+
+function closeWatchlistEditor() {
+  const overlay = document.getElementById("watchlistEditorOverlay");
+  if (overlay) overlay.setAttribute("hidden", "");
+}
+
+function initWatchlistEditor() {
+  injectEditorStyles();
+
+  document.getElementById("editWatchlistBtn")?.addEventListener("click", openWatchlistEditor);
+  document.getElementById("closeWatchlistBtn")?.addEventListener("click", closeWatchlistEditor);
+  document.getElementById("watchlistEditorOverlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "watchlistEditorOverlay") closeWatchlistEditor();
+  });
+  document.getElementById("wlSearch")?.addEventListener("input", (e) => {
+    renderSearchResults(e.target.value);
+  });
+  document.getElementById("wlChips")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove]");
+    if (btn) handleRemoveSymbol(String(btn.dataset.remove));
+  });
+  document.getElementById("wlResults")?.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-add]");
+    if (item) handleAddSymbol(String(item.dataset.add));
+  });
+}
+
 async function boot() {
   injectSplitStyles();
 
@@ -722,6 +978,7 @@ async function boot() {
   }
 
   renderGridShell(symbols);
+  initWatchlistEditor();
 
   for (const symbol of symbols) {
     const state = createChartState(symbol);
@@ -744,6 +1001,7 @@ async function boot() {
 
   connectCombinedKlineStream(symbols);
   setInterval(refreshLiveBadges, 10000);
+  fetchBinanceMarkets().catch(() => {});
 }
 
 boot();

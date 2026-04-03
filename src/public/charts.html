@@ -16,6 +16,11 @@
     <div class="bg-shape shape-a"></div>
     <div class="bg-shape shape-b"></div>
 
+    <nav class="watchlist-nav-bar" aria-label="Watchlist controls">
+      <span class="watchlist-nav-title">Watchlist Charts</span>
+      <button id="editWatchlistBtn" type="button" class="wl-btn-edit">&#43; Edit Watchlist</button>
+    </nav>
+
     <main class="dashboard chart-page chart-only-page">
       <section class="chart-grid focus-layout" id="chartGrid" aria-label="Watchlist charts">
         <article class="panel empty-panel">Loading charts...</article>
@@ -39,6 +44,24 @@
         <div id="popupTradingViewHost" class="popup-tv-host"></div>
         <div id="popupLocalHost" class="popup-local-host"></div>
       </section>
+    </div>
+
+    <div id="watchlistEditorOverlay" class="wl-overlay" hidden>
+      <aside class="wl-dialog" role="dialog" aria-modal="true" aria-labelledby="wlDialogTitle">
+        <header class="wl-dialog-head">
+          <h2 id="wlDialogTitle">Edit Watchlist</h2>
+          <button id="closeWatchlistBtn" type="button" class="wl-btn-close" aria-label="Close editor">&#x2715;</button>
+        </header>
+        <div class="wl-section">
+          <h3>Current symbols</h3>
+          <div id="wlChips" class="wl-chips"></div>
+        </div>
+        <div class="wl-section">
+          <h3>Add markets</h3>
+          <input id="wlSearch" type="search" placeholder="Search e.g. SOLUSDT, BTC&hellip;" autocomplete="off" spellcheck="false" />
+          <div id="wlResults" class="wl-results"></div>
+        </div>
+      </aside>
     </div>
 
     <script src="charts.js"></script>
